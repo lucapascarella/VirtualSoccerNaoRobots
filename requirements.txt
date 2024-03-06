@@ -1,3 +1,4 @@
-pybullet
-qibullet
-opencv-python
+pybullet~=3.2.6
+qibullet~=1.4.6
+opencv-python~=4.9.0.80
+numpy~=1.26.4

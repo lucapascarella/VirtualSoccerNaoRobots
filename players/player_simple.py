@@ -1,5 +1,4 @@
 from players.player import Player
-import cv2
 
 
 class PlayerSimple(Player):
@@ -7,7 +6,7 @@ class PlayerSimple(Player):
         Player.__init__(self)
 
     def behave(self):
-        for i in range(10):
+        for i in range(5):
             self.move("Forwards")
-        for i in range(10):
+        for i in range(5):
             self.move("Backwards")

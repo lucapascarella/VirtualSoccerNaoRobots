@@ -1,5 +1,5 @@
 import time
-from resources.motions import Motions
+from resources.motions import motions
 
 
 class Player:
@@ -94,7 +94,7 @@ class Player:
         Available motions: Backwards, Forwards, Shoot, SideStepLeft,
                            SideStepRight, StandUpFromBack, TurnLeft, TurnRight
         """
-        poses = Motions.getMotion(motion)
+        poses = motions.get_motion(motion)
 
         for i, (timing, pose) in enumerate(poses):
             self.request_queue.put(["move", pose])

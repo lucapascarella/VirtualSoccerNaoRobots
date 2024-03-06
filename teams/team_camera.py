@@ -1,9 +1,9 @@
 from teams.team import Team
-from players.simple_player import SimplePlayer
+from players.player_camera import PlayerCamera
 from math import ceil
 
 
-class SimpleTeam(Team):
+class TeamCamera(Team):
     def __init__(self, num_players, team_id):
         Team.__init__(self, num_players, team_id)
 
@@ -19,4 +19,4 @@ class SimpleTeam(Team):
         return x, y
 
     def set_player(self, player_id):
-        self.players[player_id] = SimplePlayer()
+        self.players[player_id] = PlayerCamera()

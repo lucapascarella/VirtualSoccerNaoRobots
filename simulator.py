@@ -4,16 +4,15 @@ import math
 import traceback
 import time
 import pybullet as p
-# import pybullet_data as pd
+import numpy as np
 
 from qibullet import SimulationManager
 from qibullet import NaoFsr
-# from qibullet import Camera
 
 import multiprocessing as mp
 
+from teams.team_camera import TeamCamera
 from teams.team_simple import TeamSimple
-# from teams.team_simple import TeamSimple
 
 # Number of players per team
 NUM_PLAYERS = 1
@@ -82,7 +81,7 @@ class RoboCupSimulator:
             pos_a = [(1.6 - pos_a[0]) * TEAM_A, pos_a[1] * TEAM_A, 0]
             pos_b = [(1.6 - pos_b[0]) * TEAM_B, pos_b[1] * TEAM_B, 0]
 
-            # Create robot's request handlers (aka subprocess) and draw robots
+            # Create robot's request handlers (aka subprocess) and load Nao robots in the field
             robot_a = Robot(self.manager.spawnNao(self.client, pos_a, [0, 0, 0, 1], spawn_ground_plane=False))
             robot_b = Robot(self.manager.spawnNao(self.client, pos_b, [0, 0, 1, 0], spawn_ground_plane=False))
 
@@ -125,7 +124,7 @@ class RoboCupSimulator:
                 pre_pos = cur_pos
 
                 self.manager.stepSimulation(self.client)
-                time.sleep(1. / 240.)
+                time.sleep(1. / 400.)
 
             self.print_result()
 
@@ -170,14 +169,14 @@ class RoboCupSimulator:
 
 
 class Robot:
-    def __init__(self, object):
-        self.object = object
+    def __init__(self, nao_object):
+        self.nao_object = nao_object
         self.request_queue = mp.Queue()
         self.frame_queue = mp.Queue()
         self.sensor_queue = mp.Queue()
 
-        self.link_top = self.object.link_dict["CameraTop_optical_frame"]
-        self.link_bottom = self.object.link_dict["CameraBottom_optical_frame"]
+        self.link_top = self.nao_object.link_dict["CameraTop_optical_frame"]
+        self.link_bottom = self.nao_object.link_dict["CameraBottom_optical_frame"]
 
         self.hfov = 60.9
         self.vfov = 47.6
@@ -193,12 +192,12 @@ class Robot:
         value = request[1]
 
         if request_type == "pose":
-            self.object.goToPosture(value[0], value[1])
+            self.nao_object.goToPosture(value[0], value[1])
 
         elif request_type == "move":
             joint_names = list(value.keys())
             joint_values = list(value.values())
-            self.object.setAngles(joint_names, joint_values, 1.0)
+            self.nao_object.setAngles(joint_names, joint_values, 1.0)
 
         elif request_type == "camera":
             if value == "top":
@@ -208,14 +207,14 @@ class Robot:
 
         elif request_type == "sensor":
             if value == "imu":
-                self.sensor_queue.put(self.object.getImuValues())
+                self.sensor_queue.put(self.nao_object.getImuValues())
             elif value == "fsr":
-                left_values = self.object.getFsrValues(NaoFsr.LFOOT)
-                right_values = self.object.getFsrValues(NaoFsr.RFOOT)
+                left_values = self.nao_object.getFsrValues(NaoFsr.LFOOT)
+                right_values = self.nao_object.getFsrValues(NaoFsr.RFOOT)
                 self.sensor_queue.put((left_values, right_values))
 
     def get_camera_frame(self, link):
-        _, _, _, _, pos_world, q_world = p.getLinkState(self.object.robot_model, link.getParentIndex(), computeForwardKinematics=False)
+        _, _, _, _, pos_world, q_world = p.getLinkState(self.nao_object.robot_model, link.getParentIndex(), computeForwardKinematics=False)
 
         rotation = p.getMatrixFromQuaternion(q_world)
         forward_vector = [rotation[0], rotation[3], rotation[6]]
@@ -236,17 +235,19 @@ class Robot:
             nearVal=self.near_plane,
             farVal=self.far_plane)
 
-        frame = p.getCameraImage(160, 160, view_matrix, projection_matrix, renderer=p.ER_BULLET_HARDWARE_OPENGL, flags=p.ER_NO_SEGMENTATION_MASK)[2]
+        camera_image = p.getCameraImage(160, 160, view_matrix, projection_matrix, renderer=p.ER_BULLET_HARDWARE_OPENGL, flags=p.ER_NO_SEGMENTATION_MASK)
+        frame = np.reshape(camera_image[2], (camera_image[0], camera_image[1], 4))
 
-        return frame
+        # Cast to uint8 to accommodate opencv needs
+        return frame.astype("uint8")
 
     def get_imu(self):
-        linear, angular = p.getBaseVelocity(self.object.robot_model)
+        linear, angular = p.getBaseVelocity(self.nao_object.robot_model)
         return angular, linear
 
 
 def main():
-    simulator = RoboCupSimulator(TeamSimple, TeamSimple)
+    simulator = RoboCupSimulator(TeamSimple, TeamCamera)
     simulator.reset()
     simulator.loop()
 

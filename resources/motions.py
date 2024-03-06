@@ -8,7 +8,7 @@ class MotionLibrary:
         self.library = {}
         return
 
-    def loadMotion(self, motion):
+    def load_motion(self, motion):
         self.library[motion] = []
 
         filepath = self.base_dir + motion + ".csv"
@@ -39,17 +39,17 @@ class MotionLibrary:
 
             self.library[motion].append((t, row))
 
-    def getMotion(self, motion):
+    def get_motion(self, motion):
         assert (motion in self.library)
         return self.library[motion]
 
 
-Motions = MotionLibrary("resources/motions/")
-Motions.loadMotion("Backwards")
-Motions.loadMotion("Forwards")
-Motions.loadMotion("Shoot")
-Motions.loadMotion("SideStepLeft")
-Motions.loadMotion("SideStepRight")
-Motions.loadMotion("StandUpFromBack")
-Motions.loadMotion("TurnLeft")
-Motions.loadMotion("TurnRight")
+motions = MotionLibrary("resources/motions/")
+motions.load_motion("Backwards")
+motions.load_motion("Forwards")
+motions.load_motion("Shoot")
+motions.load_motion("SideStepLeft")
+motions.load_motion("SideStepRight")
+motions.load_motion("StandUpFromBack")
+motions.load_motion("TurnLeft")
+motions.load_motion("TurnRight")
