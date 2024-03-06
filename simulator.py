@@ -12,7 +12,8 @@ from qibullet import NaoFsr
 
 import multiprocessing as mp
 
-from teams.simple_team import SimpleTeam
+from teams.team_simple import TeamSimple
+# from teams.team_simple import TeamSimple
 
 # Number of players per team
 NUM_PLAYERS = 1
@@ -44,18 +45,18 @@ class RoboCupSimulator:
         self.ball = None
         self.score = None
 
-        self.team_class_a = team_class_a
-        self.team_class_b = team_class_b
+        # Use class's name for the Team's name
+        self.team_a_name = team_class_a.__name__
+        self.team_b_name = team_class_b.__name__
 
-        # Create teams
-        self.teamA = self.team_class_a(NUM_PLAYERS, TEAM_A)
-        self.teamB = self.team_class_b(NUM_PLAYERS, TEAM_B)
+        # Create teams (Instantiate team objects)
+        self.team_a_obj = team_class_a(NUM_PLAYERS, TEAM_A)
+        self.team_b_obj = team_class_b(NUM_PLAYERS, TEAM_B)
 
         # Create goals
         self.goals = [(TEAM_B, [-1.76, 0.4, 0.48]), (TEAM_A, [1.76, 0.4, 0.48])]
 
         # Alloc an empty list of robots
-        # self.robots = [None] * (NUM_PLAYERS * 2)
         self.robots = []
 
     def reset(self):
@@ -64,39 +65,43 @@ class RoboCupSimulator:
         p.changeDynamics(self.ball, -1, lateralFriction=0.1, spinningFriction=0.1, rollingFriction=0.1)
 
         # Get a string version of the class name
-        name_team_a = self.team_class_a.__name__.rjust(15)
-        name_team_b = self.team_class_b.__name__.ljust(15)
+        name_team_a = self.team_a_name
+        name_team_b = self.team_b_name
 
         # Prepare leaderboard scores string
-        leaderboard_msg = "{}: {} vs. {}: {}".format(name_team_a, self.teamA.score, name_team_b, self.teamB.score)
+        leaderboard_msg = "{} {} vs. {} {}".format(name_team_a, self.team_a_obj.score, self.team_b_obj.score, name_team_b)
 
         # Show leaderboard in form of debug text
         self.score = p.addUserDebugText(leaderboard_msg, [-1.55, 3.0, 0.1], textOrientation=[0.5, 0, 0, 1], textColorRGB=[1, 1, 1], textSize=0.25)
 
-        # Arrange players in the field
+        # Arrange players in the field for both teams
         for i in range(NUM_PLAYERS):
-            pos_a = self.teamA.get_formation(i)
-            pos_b = self.teamB.get_formation(i)
+            pos_a = self.team_a_obj.get_formation(i)
+            pos_b = self.team_b_obj.get_formation(i)
 
             pos_a = [(1.6 - pos_a[0]) * TEAM_A, pos_a[1] * TEAM_A, 0]
             pos_b = [(1.6 - pos_b[0]) * TEAM_B, pos_b[1] * TEAM_B, 0]
 
+            # Create robot's request handlers (aka subprocess) and draw robots
             robot_a = Robot(self.manager.spawnNao(self.client, pos_a, [0, 0, 0, 1], spawn_ground_plane=False))
             robot_b = Robot(self.manager.spawnNao(self.client, pos_b, [0, 0, 1, 0], spawn_ground_plane=False))
 
-            self.teamA.set_player(i)
-            self.teamB.set_player(i)
+            # Create players (Instantiate Player objects)
+            self.team_a_obj.set_player(i)
+            self.team_b_obj.set_player(i)
 
-            self.teamA.players[i].set_queues(robot_a.request_queue, robot_a.frame_queue, robot_a.sensor_queue)
-            self.teamB.players[i].set_queues(robot_b.request_queue, robot_b.frame_queue, robot_b.sensor_queue)
+            #
+            self.team_a_obj.players[i].set_queues(robot_a.request_queue, robot_a.frame_queue, robot_a.sensor_queue)
+            self.team_b_obj.players[i].set_queues(robot_b.request_queue, robot_b.frame_queue, robot_b.sensor_queue)
 
+            # Add fresh created robots to the robot list
             self.robots.append(robot_a)
             self.robots.append(robot_b)
 
     def loop(self):
         try:
-            self.teamA.play()
-            self.teamB.play()
+            self.team_a_obj.play()
+            self.team_b_obj.play()
 
             pre_pos = p.getBasePositionAndOrientation(self.ball)[0]
 
@@ -111,10 +116,10 @@ class RoboCupSimulator:
                 result = self.check_goal(cur_pos, pre_pos)
 
                 if result == TEAM_A:
-                    self.teamA.score += 1
+                    self.team_a_obj.score += 1
                     break
                 elif result == TEAM_B:
-                    self.teamB.score += 1
+                    self.team_b_obj.score += 1
                     break
 
                 pre_pos = cur_pos
@@ -127,8 +132,8 @@ class RoboCupSimulator:
         except Exception as e:
             print(traceback.format_exc())
 
-            self.teamA.stop()
-            self.teamB.stop()
+            self.team_a_obj.stop()
+            self.team_b_obj.stop()
 
             self.manager.stopSimulation(self.client)
 
@@ -153,10 +158,10 @@ class RoboCupSimulator:
         return 0
 
     def print_result(self):
-        if self.teamA.score > self.teamB.score:
-            winner = self.team_class_a.__name__
-        elif self.teamA.score < self.teamB.score:
-            winner = self.team_class_b.__name__
+        if self.team_a_obj.score > self.team_b_obj.score:
+            winner = self.team_a_name
+        elif self.team_a_obj.score < self.team_b_obj.score:
+            winner = self.team_b_name
         else:
             winner = 'no one! ;)'
 
@@ -241,7 +246,7 @@ class Robot:
 
 
 def main():
-    simulator = RoboCupSimulator(SimpleTeam, SimpleTeam)
+    simulator = RoboCupSimulator(TeamSimple, TeamSimple)
     simulator.reset()
     simulator.loop()
 

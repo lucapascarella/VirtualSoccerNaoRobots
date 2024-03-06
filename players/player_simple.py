@@ -1,7 +1,8 @@
 from players.player import Player
+import cv2
 
 
-class SimplePlayer(Player):
+class PlayerSimple(Player):
     def __init__(self):
         Player.__init__(self)
 
@@ -10,4 +11,3 @@ class SimplePlayer(Player):
             self.move("Forwards")
         for i in range(10):
             self.move("Backwards")
-        return
