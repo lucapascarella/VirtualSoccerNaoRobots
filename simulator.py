@@ -247,7 +247,8 @@ class Robot:
 
 
 def main():
-    simulator = RoboCupSimulator(TeamSimple, TeamCamera)
+    # Load Team's classes
+    simulator = RoboCupSimulator(TeamSimple, TeamSimple)
     simulator.reset()
     simulator.loop()
 
