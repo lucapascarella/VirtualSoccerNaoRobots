@@ -1,0 +1,137 @@
+<sdf version='1.6'>
+	<world name='default'>
+	<gravity>0 0 -9.8</gravity>
+		<model name='soccerfield_line'>
+			<static>1</static>
+			<pose>0 0 0 0 0 0</pose>
+			<link name='link_d0'>
+			<inertial>
+			<mass>0</mass>
+			<inertia>
+			<ixx>0.166667</ixx>
+			<ixy>0</ixy>
+			<ixz>0</ixz>
+			<iyy>0.166667</iyy>
+			<iyz>0</iyz>
+			<izz>0.166667</izz>
+			</inertia>
+			</inertial>
+			<visual name='visual'>
+				<geometry>
+				<mesh>
+					<scale>0.8 0.8 0.8</scale>
+					<uri>soccerfield_line.obj</uri>
+				</mesh>
+				</geometry>
+			<material>
+				<ambient>1 1 1 1</ambient>
+				<diffuse>1.00000 1.00000 1.000000 1</diffuse>
+				<specular>0.1 .1 .1 1</specular>
+				<emissive>0 0 0 0</emissive>
+			 </material>
+			 </visual>
+			 </link>
+		</model>
+		<model name='soccerfield_goal_left'>
+			<static>1</static>
+			<pose>-19.04 0 0 1.570796 0 -1.570796</pose>
+			<link name='link_d0'>
+			<inertial>
+			<mass>10</mass>
+			<inertia>
+			<ixx>0.166667</ixx>
+			<ixy>0</ixy>
+			<ixz>0</ixz>
+			<iyy>0.166667</iyy>
+			<iyz>0</iyz>
+			<izz>0.166667</izz>
+			</inertia>
+			</inertial>
+			<visual name='visual'>
+				<geometry>
+				<mesh>
+					<scale>0.8 1.2 0.8</scale>
+					<uri>soccerfield_goal.obj</uri>
+				</mesh>
+				</geometry>
+			<material>
+				<ambient>1 1 1 1</ambient>
+				<diffuse>1.00000 1.00000 1.000000 1</diffuse>
+				<specular>0.1 .1 .1 1</specular>
+				<emissive>0 0 0 0</emissive>
+			 </material>
+			 </visual>
+			 </link>
+		</model>
+		<model name='soccerfield_goal_right'>
+			<static>1</static>
+			<pose>19.04 0 0 1.570796 0 1.570796</pose>
+			<link name='link_d0'>
+			<inertial>
+			<mass>10</mass>
+			<inertia>
+			<ixx>0.166667</ixx>
+			<ixy>0</ixy>
+			<ixz>0</ixz>
+			<iyy>0.166667</iyy>
+			<iyz>0</iyz>
+			<izz>0.166667</izz>
+			</inertia>
+			</inertial>
+			<visual name='visual'>
+				<geometry>
+				<mesh>
+					<scale>0.8 1.2 0.8</scale>
+					<uri>soccerfield_goal.obj</uri>
+				</mesh>
+				</geometry>
+			<material>
+				<ambient>1 1 1 1</ambient>
+				<diffuse>1.00000 1.00000 1.000000 1</diffuse>
+				<specular>0.1 .1 .1 1</specular>
+				<emissive>0 0 0 0</emissive>
+			 </material>
+			 </visual>
+			 </link>
+		</model>
+		<model name='soccerfield_grass'>
+			<static>1</static>
+			<pose>0 0 0 0 0 0</pose>
+			<link name='link_d1'>
+			<inertial>
+			<mass>0</mass>
+			<inertia>
+			<ixx>0.166667</ixx>
+			<ixy>0</ixy>
+			<ixz>0</ixz>
+			<iyy>0.166667</iyy>
+			<iyz>0</iyz>
+			<izz>0.166667</izz>
+			</inertia>
+			</inertial>
+			<collision name='collision_1'>
+			<geometry>
+            <plane>
+              <normal>0 0 1</normal>
+              <size>100 100</size>
+            </plane>
+            </geometry>
+			</collision>
+			<visual name='visual'>
+				<geometry>
+				<mesh>
+					<scale>0.8 0.8 0.8</scale>
+					<uri>soccerfield_grass.obj</uri>
+				</mesh>
+				</geometry>
+			<material>
+				<ambient>1 1 1 1</ambient>
+				<diffuse>0.600000 0.400000 0.000000 1</diffuse>
+				<specular>.5 .5 .5 1</specular>
+				<emissive>0 0 0 0</emissive>
+			 </material>
+			 </visual>
+			 </link>
+		</model>
+	</world>
+</sdf>
