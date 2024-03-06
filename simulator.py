@@ -4,11 +4,11 @@ import math
 import traceback
 import time
 import pybullet as p
-import pybullet_data as pd
+# import pybullet_data as pd
 
 from qibullet import SimulationManager
-from qibullet import NaoVirtual, NaoFsr
-from qibullet import Camera
+from qibullet import NaoFsr
+# from qibullet import Camera
 
 import multiprocessing as mp
 
@@ -18,12 +18,12 @@ from teams.simple_team import SimpleTeam
 NUM_PLAYERS = 1
 
 # Player starting position
-TEAM_A = -0.1
+TEAM_A = -1
 TEAM_B = 1
 
 
 class RoboCupSimulator:
-    def __init__(self, teamClassA, teamClassB):
+    def __init__(self, team_class_a, team_class_b):
         # Launch simulation
         self.manager = SimulationManager()
         self.client = self.manager.launchSimulation(gui=True, auto_step=False)
@@ -35,34 +35,28 @@ class RoboCupSimulator:
 
         p.resetDebugVisualizerCamera(cameraDistance=2, cameraYaw=180, cameraPitch=230, cameraTargetPosition=[0, 0, 0])
 
-        # Spawn soccor field
+        # Spawn soccer field
         p.setAdditionalSearchPath("./resources/objects")
 
         self.field = p.loadSDF("soccerfield.sdf", globalScaling=0.1, physicsClientId=self.client)
 
-        # p.loadURDF(
-        #    "mark_yellow.urdf",
-        #    basePosition=[-2.6, 0, 0],
-        #    globalScaling=1.0,
-        #    physicsClientId=self.client)
+        # Initialize attributes
+        self.ball = None
+        self.score = None
 
-        # p.loadURDF(
-        #    "mark_cyan.urdf",
-        #    basePosition=[2.6, 0, 0],
-        #    globalScaling=1.0,
-        #    physicsClientId=self.client)
-
-        self.teamClassA = teamClassA
-        self.teamClassB = teamClassB
+        self.team_class_a = team_class_a
+        self.team_class_b = team_class_b
 
         # Create teams
-        self.teamA = self.teamClassA(NUM_PLAYERS, TEAM_A)
-        self.teamB = self.teamClassB(NUM_PLAYERS, TEAM_B)
+        self.teamA = self.team_class_a(NUM_PLAYERS, TEAM_A)
+        self.teamB = self.team_class_b(NUM_PLAYERS, TEAM_B)
 
+        # Create goals
         self.goals = [(TEAM_B, [-1.76, 0.4, 0.48]), (TEAM_A, [1.76, 0.4, 0.48])]
 
-        # Store a list of robots
-        self.robots = [None] * (NUM_PLAYERS * 2)
+        # Alloc an empty list of robots
+        # self.robots = [None] * (NUM_PLAYERS * 2)
+        self.robots = []
 
     def reset(self):
         self.ball = p.loadURDF("soccerball.urdf", basePosition=[0, 0, 0], globalScaling=0.15, physicsClientId=self.client)
@@ -70,53 +64,51 @@ class RoboCupSimulator:
         p.changeDynamics(self.ball, -1, lateralFriction=0.1, spinningFriction=0.1, rollingFriction=0.1)
 
         # Get a string version of the class name
-        nameA = self.teamClassA.__name__.rjust(15)
-        nameB = self.teamClassB.__name__.ljust(15)
+        name_team_a = self.team_class_a.__name__.rjust(15)
+        name_team_b = self.team_class_b.__name__.ljust(15)
 
         # Prepare leaderboard scores string
-        name_str = nameA + " " + str(self.teamA.score)
-        name_str += " vs "
-        name_str += str(self.teamB.score) + " " + nameB
+        leaderboard_msg = "{}: {} vs. {}: {}".format(name_team_a, self.teamA.score, name_team_b, self.teamB.score)
 
         # Show leaderboard in form of debug text
-        self.score = p.addUserDebugText(name_str, [-1.55, 3.0, 0.1], textOrientation=[0.5, 0, 0, 1], textColorRGB=[1, 1, 1], textSize=0.25)
+        self.score = p.addUserDebugText(leaderboard_msg, [-1.55, 3.0, 0.1], textOrientation=[0.5, 0, 0, 1], textColorRGB=[1, 1, 1], textSize=0.25)
 
+        # Arrange players in the field
         for i in range(NUM_PLAYERS):
-            posA = self.teamA.getFormation(i)
-            posB = self.teamB.getFormation(i)
+            pos_a = self.teamA.get_formation(i)
+            pos_b = self.teamB.get_formation(i)
 
-            posA = [(1.6 - posA[0]) * TEAM_A, posA[1] * TEAM_A, 0]
-            posB = [(1.6 - posB[0]) * TEAM_B, posB[1] * TEAM_B, 0]
+            pos_a = [(1.6 - pos_a[0]) * TEAM_A, pos_a[1] * TEAM_A, 0]
+            pos_b = [(1.6 - pos_b[0]) * TEAM_B, pos_b[1] * TEAM_B, 0]
 
-            robotA = Robot(self.manager.spawnNao(self.client, posA, [0, 0, 0, 1], spawn_ground_plane=False))
+            robot_a = Robot(self.manager.spawnNao(self.client, pos_a, [0, 0, 0, 1], spawn_ground_plane=False))
+            robot_b = Robot(self.manager.spawnNao(self.client, pos_b, [0, 0, 1, 0], spawn_ground_plane=False))
 
-            robotB = Robot(self.manager.spawnNao(self.client, posB, [0, 0, 1, 0], spawn_ground_plane=False))
+            self.teamA.set_player(i)
+            self.teamB.set_player(i)
 
-            self.teamA.setPlayer(i)
-            self.teamB.setPlayer(i)
+            self.teamA.players[i].set_queues(robot_a.request_queue, robot_a.frame_queue, robot_a.sensor_queue)
+            self.teamB.players[i].set_queues(robot_b.request_queue, robot_b.frame_queue, robot_b.sensor_queue)
 
-            self.teamA.players[i].setQueues(robotA.request_queue, robotA.frame_queue, robotA.sensor_queue)
-            self.teamB.players[i].setQueues(robotB.request_queue, robotB.frame_queue, robotB.sensor_queue)
-
-            self.robots[i * 2] = robotA
-            self.robots[i * 2 + 1] = robotB
+            self.robots.append(robot_a)
+            self.robots.append(robot_b)
 
     def loop(self):
         try:
             self.teamA.play()
             self.teamB.play()
 
-            prePos = p.getBasePositionAndOrientation(self.ball)[0]
+            pre_pos = p.getBasePositionAndOrientation(self.ball)[0]
 
             while True:
                 # Handle Robot's requests iteratively
                 for robot in self.robots:
                     if not robot.request_queue.empty():
                         request = robot.request_queue.get()
-                        robot.handleRequest(request)
+                        robot.handle_request(request)
 
-                curPos = p.getBasePositionAndOrientation(self.ball)[0]
-                result = self.checkGoal(curPos, prePos)
+                cur_pos = p.getBasePositionAndOrientation(self.ball)[0]
+                result = self.check_goal(cur_pos, pre_pos)
 
                 if result == TEAM_A:
                     self.teamA.score += 1
@@ -125,12 +117,12 @@ class RoboCupSimulator:
                     self.teamB.score += 1
                     break
 
-                prePos = curPos
+                pre_pos = cur_pos
 
                 self.manager.stepSimulation(self.client)
                 time.sleep(1. / 240.)
 
-            self.printResult()
+            self.print_result()
 
         except Exception as e:
             print(traceback.format_exc())
@@ -140,7 +132,7 @@ class RoboCupSimulator:
 
             self.manager.stopSimulation(self.client)
 
-    def checkGoal(self, cur_pos, pre_pos):
+    def check_goal(self, cur_pos, pre_pos):
         if cur_pos[0] == pre_pos[0]:
             return 0
 
@@ -160,11 +152,11 @@ class RoboCupSimulator:
 
         return 0
 
-    def printResult(self):
+    def print_result(self):
         if self.teamA.score > self.teamB.score:
-            winner = self.teamClassA.__name__
+            winner = self.team_class_a.__name__
         elif self.teamA.score < self.teamB.score:
-            winner = self.teamClassB.__name__
+            winner = self.team_class_b.__name__
         else:
             winner = 'no one! ;)'
 
@@ -188,7 +180,7 @@ class Robot:
         self.near_plane = 0.01
         self.far_plane = 100.
 
-    def handleRequest(self, request):
+    def handle_request(self, request):
         if request is None:
             return
 
@@ -205,9 +197,9 @@ class Robot:
 
         elif request_type == "camera":
             if value == "top":
-                self.frame_queue.put(self.getCameraFrame(self.link_top))
+                self.frame_queue.put(self.get_camera_frame(self.link_top))
             elif value == "bottom":
-                self.frame_queue.put(self.getCameraFrame(self.link_bottom))
+                self.frame_queue.put(self.get_camera_frame(self.link_bottom))
 
         elif request_type == "sensor":
             if value == "imu":
@@ -217,7 +209,7 @@ class Robot:
                 right_values = self.object.getFsrValues(NaoFsr.RFOOT)
                 self.sensor_queue.put((left_values, right_values))
 
-    def getCameraFrame(self, link):
+    def get_camera_frame(self, link):
         _, _, _, _, pos_world, q_world = p.getLinkState(self.object.robot_model, link.getParentIndex(), computeForwardKinematics=False)
 
         rotation = p.getMatrixFromQuaternion(q_world)
@@ -243,9 +235,9 @@ class Robot:
 
         return frame
 
-    def getImu(self):
+    def get_imu(self):
         linear, angular = p.getBaseVelocity(self.object.robot_model)
-        return (angular, linear)
+        return angular, linear
 
 
 def main():

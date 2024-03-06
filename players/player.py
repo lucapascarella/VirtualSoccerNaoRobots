@@ -1,7 +1,6 @@
-import os
 import time
-
 from resources.motions import Motions
+
 
 class Player:
     def __init__(self):
@@ -12,12 +11,12 @@ class Player:
         self.frame_top = None
         self.frame_bottom = None
 
-    def setQueues(self, request_queue, frame_queue, sensor_queue):
+    def set_queues(self, request_queue, frame_queue, sensor_queue):
         self.request_queue = request_queue
         self.frame_queue = frame_queue
         self.sensor_queue = sensor_queue
 
-    def getImu(self):
+    def get_imu(self):
         """
         Returns Inertial Measurement Unit (IMU) value
         (angular_velocity, linear_acceleration)
@@ -27,7 +26,7 @@ class Player:
         self.request_queue.put(["sensor", "imu"])
         return self.sensor_queue.get()
 
-    def getFsr(self):
+    def get_fsr(self):
         """
         Returns Force Sensitive Resistor (FSR) values for left and right feet
         ([LFOOT_FL, LFOOT_FR, LFOOT_RL, LFOOT_RR], [RFOOT_FL, RFOOT_FR, RFOOT_RL, RFOOT_RR])
@@ -43,7 +42,7 @@ class Player:
         self.request_queue.put(["sensor", "fsr"])
         return self.sensor_queue.get()
 
-    def getCameraFrame(self, position):
+    def get_camera_frame(self, position):
         """
         Parameter:
             position - target camera in string
@@ -52,11 +51,11 @@ class Player:
 
         Returns camera image frame
         """
-        assert(position == "top" or position == "bottom")
+        assert (position == "top" or position == "bottom")
         self.request_queue.put(["camera", position])
         return self.frame_queue.get()
 
-    def setAngles(self, joint_dict):
+    def set_angles(self, joint_dict):
         """
         Parameter:
             joint_dict - dictionary of joint value (key: joint name)
@@ -83,7 +82,7 @@ class Player:
         Available postures: Stand, StandInit, StandZero, Crouch, Sit,
                             SitRelax, LyingBelly, LyingBack
         """
-        assert(speed > 0.0 and speed <= 1.0)
+        assert (0.0 < speed <= 1.0)
         self.request_queue.put(["pose", (posture, speed)])
         return
 
@@ -99,7 +98,7 @@ class Player:
 
         for i, (timing, pose) in enumerate(poses):
             self.request_queue.put(["move", pose])
-            time.sleep(0.1) # default delay
+            time.sleep(0.1)  # default delay
 
         return
 
