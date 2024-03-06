@@ -11,7 +11,6 @@ from qibullet import NaoFsr
 
 import multiprocessing as mp
 
-from teams.team_camera import TeamCamera
 from teams.team_simple import TeamSimple
 
 # Number of players per team
